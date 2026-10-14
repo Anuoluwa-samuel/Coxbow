@@ -2,40 +2,40 @@
 
 /*
  * Coxbow design tokens.
- * Warm ivory ground, deep forest primary, sage secondary, charcoal text,
+ * Bright white and soft-blue surfaces, a vivid blue primary, deep navy, charcoal text,
  * with a single brass accent used sparingly for emphasis.
  */
 @theme {
-  /* Surfaces: bright white with a soft mint wash */
-  --color-ivory: #f4faf7;
+  /* Surfaces: bright white with a soft blue wash */
+  --color-ivory: #f5f8ff;
   --color-paper: #ffffff;
-  --color-sand: #e9f4ee;
-  --color-line: #dcebe3;
+  --color-sand: #edf2fb;
+  --color-line: #dfe7f5;
 
-  /* Primary green (names kept from the first design pass; "forest" now means green + deep teal) */
-  --color-forest-950: #0b2d3c; /* deep teal-navy: headings, sidebar, footer, CTA banner */
-  --color-forest-900: #066a35; /* dark green: hover, text on mint */
-  --color-forest-800: #088040; /* primary green: buttons, links (5.0:1 on white) */
-  --color-forest-700: #0c9a4e; /* icons and decoration */
-  --color-forest-600: #19b862;
+  /* Primary blue (token names kept from the first design pass: "forest" now means blue + deep navy) */
+  --color-forest-950: #0c2340; /* deep navy: headings, sidebar, footer, CTA banner */
+  --color-forest-900: #1d4ed8; /* dark blue: hover, text on light-blue tints (5.9:1) */
+  --color-forest-800: #2563eb; /* primary blue: buttons, links (5.2:1 on white) */
+  --color-forest-700: #2563eb; /* icons, small coloured text */
+  --color-forest-600: #3b82f6;
 
-  /* Mint tints */
-  --color-sage-100: #e4f5ec;
-  --color-sage-200: #cdeedd;
-  --color-sage-300: #a9dfc3;
-  --color-sage-500: #4fb07f;
+  /* Light-blue tints */
+  --color-sage-100: #e8f0fe;
+  --color-sage-200: #d3e3fd;
+  --color-sage-300: #aecbfa;
+  --color-sage-500: #5b8def;
 
-  /* Pastel tints for icon chips and stat cards */
-  --color-sky-100: #e3f1fb;
+  /* Secondary pastel tints for icon chips and stat cards (sky holds a soft teal) */
+  --color-sky-100: #def4f2;
   --color-violet-100: #eee9fb;
   --color-peach-100: #fdeede;
-  --color-sky-700: #1b6aa5;
+  --color-sky-700: #0f6b63;
   --color-violet-700: #5b3fb0;
-  --color-peach-700: #a85a00;
+  --color-peach-700: #964f00;
 
-  --color-charcoal: #1b2b33;
-  --color-ink-soft: #3f525c;
-  --color-ink-mute: #56666f;
+  --color-charcoal: #1b2a3d;
+  --color-ink-soft: #40526b;
+  --color-ink-mute: #566579;
 
   /* Warm yellow accent (the gloves): decorative, or text on dark backgrounds only */
   --color-brass: #f2b705;
@@ -52,7 +52,7 @@
   --radius-control: 0.75rem;
   --radius-card: 1.25rem;
 
-  --shadow-card: 0 1px 2px rgb(11 45 60 / 0.04), 0 12px 32px -14px rgb(11 45 60 / 0.16);
+  --shadow-card: 0 1px 2px rgb(12 35 64 / 0.04), 0 12px 32px -14px rgb(12 35 64 / 0.18);
 }
 
 html {
@@ -61,7 +61,7 @@ html {
 }
 
 body {
-  background: linear-gradient(180deg, #e9f7f0 0, var(--color-ivory) 520px);
+  background: linear-gradient(180deg, #e8f0fe 0, var(--color-ivory) 520px);
   background-color: var(--color-ivory);
   color: var(--color-charcoal);
   font-family: var(--font-sans);
