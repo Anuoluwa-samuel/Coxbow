@@ -24,9 +24,10 @@
 
   --color-charcoal: #232a28;
   --color-ink-soft: #4a5450;
-  --color-ink-mute: #6b7571;
+  --color-ink-mute: #596460;
 
-  --color-brass: #b5833a;
+  --color-brass: #b5833a; /* decorative, and text on dark backgrounds only */
+  --color-brass-text: #7f5817; /* text on light backgrounds: >= 5.1:1 on every light surface */
   --color-brass-soft: #f3e6cd;
 
   --color-danger: #b3261e;

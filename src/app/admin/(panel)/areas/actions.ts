@@ -30,7 +30,7 @@ export async function saveSlot(id: string, _p: ActionState, fd: FormData): Promi
 export async function saveSettings(_p: ActionState, fd: FormData): Promise<ActionState> {
   return runAction(async () => {
     const actor = await requirePermission("settings.write");
-    await updateBookingSettings(db, actor, { operatingDays: fd.getAll("day").map(Number), maxAdvanceDays: Number(str(fd, "maxAdvanceDays")) });
+    await updateBookingSettings(db, actor, { operatingDays: fd.getAll("day").map(Number), maxAdvanceDays: Number(str(fd, "maxAdvanceDays")), customerChangeNoticeHours: Number(str(fd, "customerChangeNoticeHours")) });
     return "Booking settings saved.";
   });
 }

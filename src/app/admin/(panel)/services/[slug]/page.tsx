@@ -3,17 +3,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePagePermission } from "@/server/auth";
 import { db } from "@/server/db/client";
-import { fetchService } from "@/server/catalog-db";
+import { fetchCategories, fetchService } from "@/server/catalog-db";
+import { PhotoUpload } from "./photo-upload";
 import { ActionForm, inputCls, labelCls } from "@/components/admin/action-form";
 import { Card, PageTitle } from "@/components/admin/ui";
-import { upsertAddonAction, updateServiceAction } from "../actions";
+import { removeImageAction, upsertAddonAction, updateServiceAction } from "../actions";
 
 export const metadata: Metadata = { title: "Edit service", robots: { index: false } };
 
 export default async function EditService({ params }: PageProps<"/admin/services/[slug]">) {
   await requirePagePermission("services.write");
   const { slug } = await params;
-  const s = await fetchService(db, slug, { includeDisabled: true });
+  const [s, cats] = await Promise.all([fetchService(db, slug, { includeDisabled: true }), fetchCategories(db)]);
   if (!s) notFound();
   const p = s.pricing;
   const area = (id: string, label: string, v: string[], rows = 4) => (
@@ -26,6 +27,7 @@ export default async function EditService({ params }: PageProps<"/admin/services
         <Card title="Details and pricing" className="xl:col-span-2">
           <ActionForm action={updateServiceAction.bind(null, slug)} submitLabel="Save service">
             <div><label className={labelCls} htmlFor="name">Name</label><input id="name" name="name" defaultValue={s.name} required className={inputCls} /></div>
+            <div><label className={labelCls} htmlFor="categorySlug">Category</label><select id="categorySlug" name="categorySlug" defaultValue={s.categorySlug} className={inputCls}>{cats.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}</select></div>
             <div><label className={labelCls} htmlFor="summary">Summary</label><input id="summary" name="summary" defaultValue={s.summary} required className={inputCls} /></div>
             <div><label className={labelCls} htmlFor="description">Description</label><textarea id="description" name="description" defaultValue={s.description} rows={4} required className={`${inputCls} h-auto py-2`} /></div>
             {area("idealFor", "Ideal for", s.idealFor, 3)}{area("includes", "Included", s.includes)}{area("excludes", "Not included", s.excludes)}{area("extraCharges", "Extra charges", s.extraCharges, 3)}
@@ -48,6 +50,15 @@ export default async function EditService({ params }: PageProps<"/admin/services
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" defaultChecked={s.enabled} className="size-4 accent-forest-800" /> Enabled (visible and bookable)</label>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="popular" defaultChecked={s.popular} className="size-4 accent-forest-800" /> Show on homepage as popular</label>
           </ActionForm>
+        </Card>
+        <Card title="Photo" className="xl:col-start-3">
+          {s.imageId ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={`/media/${s.imageId}`} alt={s.imageAlt ?? s.name} className="mb-3 aspect-[16/10] w-full rounded-[var(--radius-control)] object-cover" />
+          ) : <p className="mb-3 text-sm text-ink-soft">No photo yet. A placeholder is shown on the public site.</p>}
+          <PhotoUpload slug={slug} hasImage={Boolean(s.imageId)} defaultAlt={s.imageAlt ?? ""} />
+          {s.imageId ? <ActionForm action={removeImageAction.bind(null, slug)} submitLabel="Remove photo" variant="outline" confirm="Remove this photo?" className="mt-3" /> : null}
+          <p className="mt-3 text-xs text-ink-mute">JPEG, PNG or WebP, up to 1.5 MB. About 1600 px wide is plenty. Use real photos of your own work.</p>
         </Card>
         <Card title="Add-ons">
           <ul className="mb-4 space-y-2 text-sm">{s.addons.map((a) => <li key={a.slug} className="flex justify-between"><span>{a.name}{a.enabled ? "" : " (off)"}</span><span>₦{(a.priceKobo / 100).toLocaleString()}</span></li>)}{s.addons.length === 0 ? <li className="text-ink-soft">None.</li> : null}</ul>

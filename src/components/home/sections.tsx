@@ -3,6 +3,7 @@ import { ArrowUpRight, Check, MapPin } from "lucide-react";
 import { Container, SectionHeading } from "@/components/ui/section";
 import { ButtonLink } from "@/components/ui/button";
 import { PlaceholderImage } from "@/components/ui/placeholder-image";
+import { ServiceImage } from "@/components/ui/service-image";
 import { FaqList } from "@/components/site/faq-list";
 import type { Service, ServiceArea, Faq } from "@/lib/catalog-types";
 import { formatNaira } from "@/lib/money";
@@ -38,6 +39,7 @@ export function PopularServices({ services }: { services: Service[] }) {
                 href={`/services/${s.slug}`}
                 className="group flex h-full flex-col rounded-[var(--radius-card)] border border-line bg-paper p-6 transition-all duration-200 hover:-translate-y-0.5 hover:border-sage-500 hover:shadow-card"
               >
+                {s.imageId ? <ServiceImage service={s} className="-mx-0 mb-4 aspect-[16/10]" /> : null}
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-2xl">{s.name}</h3>
                   <ArrowUpRight className="size-5 shrink-0 text-ink-mute transition-colors group-hover:text-forest-700" aria-hidden />
@@ -165,6 +167,26 @@ export function FinalCta() {
             <ButtonLink href="/contact" variant="outline" size="lg" className="border-sage-300/50 text-ivory hover:bg-white/10">Talk to us</ButtonLink>
           </div>
         </div>
+      </Container>
+    </section>
+  );
+}
+
+export function Reviews({ reviews }: { reviews: { rating: number; comment: string | null; service: string; firstName: string }[] }) {
+  if (reviews.length === 0) return null; // never show placeholder testimonials
+  return (
+    <section className="mt-28" aria-labelledby="reviews-heading">
+      <Container>
+        <SectionHeading eyebrow="Customer reviews" title="What customers say" />
+        <ul id="reviews-heading" className="mt-10 grid gap-5 md:grid-cols-3">
+          {reviews.map((r, i) => (
+            <li key={i} className="rounded-[var(--radius-card)] border border-line bg-paper p-6">
+              <p aria-label={`${r.rating} out of 5 stars`} className="text-brass-text">{"★".repeat(r.rating)}<span className="text-line">{"★".repeat(5 - r.rating)}</span></p>
+              {r.comment ? <p className="mt-3 text-ink-soft">{r.comment}</p> : null}
+              <p className="mt-4 text-sm font-semibold text-forest-950">{r.firstName} <span className="font-normal text-ink-mute">· {r.service}</span></p>
+            </li>
+          ))}
+        </ul>
       </Container>
     </section>
   );

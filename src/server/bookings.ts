@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import type { Db } from "./db/client";
-import { bookingItems, bookingStatusHistory, bookings, customers, notifications, quotations, services, timeSlots } from "./db/schema";
+import { bookingItems, bookingStatusHistory, bookings, customers, notifications, quotations, reviews, services, timeSlots } from "./db/schema";
 import { fetchBookingSettings, fetchService, fetchServiceAreas, fetchTimeSlots } from "./catalog-db";
 import { countHeld, isValidDateString } from "./availability";
 import { AppError } from "./errors";
@@ -10,6 +10,8 @@ import { bookingInputSchema, type BookingInput } from "@/lib/booking-schema";
 import { calculatePrice } from "@/lib/pricing";
 import { isServiceable } from "@/lib/service-area";
 import type { BookingStatus } from "@/lib/booking-status";
+import { paymentSummary } from "./payments";
+import { customerChangeOptions } from "./customer-changes";
 
 export interface CreateBookingResult {
   reference: string;
@@ -159,6 +161,7 @@ export interface CustomerBookingView {
   reference: string;
   status: BookingStatus;
   serviceName: string;
+  serviceSlug: string;
   scheduledDate: string;
   timeSlotLabel: string;
   address: string;
@@ -171,6 +174,10 @@ export interface CustomerBookingView {
   quotation: { id: string; version: number; amountKobo: number; notes: string | null; status: string; validUntil: Date | null } | null;
   customerName: string;
   createdAt: Date;
+  hasEmail: boolean;
+  payment: { paidKobo: number; netPaidKobo: number; outstandingKobo: number | null };
+  changes: Awaited<ReturnType<typeof customerChangeOptions>>;
+  review: { rating: number; comment: string | null; approved: boolean } | null;
 }
 
 /**
@@ -181,7 +188,7 @@ export interface CustomerBookingView {
 export async function getBookingForCustomer(db: Db, reference: string, token: string | undefined): Promise<CustomerBookingView | null> {
   if (!token) return null;
   const [b] = await db
-    .select({ b: bookings, serviceName: services.name, slotLabel: timeSlots.label, customerName: customers.fullName })
+    .select({ b: bookings, serviceName: services.name, serviceSlug: services.slug, slotLabel: timeSlots.label, customerName: customers.fullName, customerEmail: customers.email })
     .from(bookings)
     .innerJoin(services, eq(services.id, bookings.serviceId))
     .innerJoin(timeSlots, eq(timeSlots.id, bookings.timeSlotId))
@@ -190,16 +197,20 @@ export async function getBookingForCustomer(db: Db, reference: string, token: st
     .limit(1);
   if (!b || !safeEqual(sha256(token), b.b.accessTokenHash)) return null;
 
-  const [items, qs] = await Promise.all([
+  const [items, qs, pay, changes, [rev]] = await Promise.all([
     db.select({ name: bookingItems.name, priceKobo: bookingItems.priceKobo }).from(bookingItems).where(eq(bookingItems.bookingId, b.b.id)),
     db.select().from(quotations).where(eq(quotations.bookingId, b.b.id)),
+    paymentSummary(db, b.b.id),
+    customerChangeOptions(db, b.b.id, { status: b.b.status, startsAt: b.b.startsAt }),
+    db.select({ rating: reviews.rating, comment: reviews.comment, approved: reviews.approved }).from(reviews).where(eq(reviews.bookingId, b.b.id)).limit(1),
   ]);
   const live = qs.filter((q) => q.status === "sent" || q.status === "accepted").sort((a, c) => c.version - a.version)[0];
 
   return {
-    reference: b.b.reference, status: b.b.status, serviceName: b.serviceName, scheduledDate: b.b.scheduledDate, timeSlotLabel: b.slotLabel,
+    reference: b.b.reference, status: b.b.status, serviceName: b.serviceName, serviceSlug: b.serviceSlug, scheduledDate: b.b.scheduledDate, timeSlotLabel: b.slotLabel,
     address: b.b.address, city: b.b.city, requiresQuotation: b.b.requiresQuotation, estimateKobo: b.b.estimateKobo, finalKobo: b.b.finalKobo,
-    currency: b.b.currency, items, customerName: b.customerName, createdAt: b.b.createdAt,
+    currency: b.b.currency, items, customerName: b.customerName, createdAt: b.b.createdAt, hasEmail: Boolean(b.customerEmail),
+    payment: { paidKobo: pay.paidKobo, netPaidKobo: pay.netPaidKobo, outstandingKobo: pay.outstandingKobo }, changes, review: rev ?? null,
     quotation: live ? { id: live.id, version: live.version, amountKobo: live.amountKobo, notes: live.notes, status: live.status, validUntil: live.validUntil } : null,
   };
 }

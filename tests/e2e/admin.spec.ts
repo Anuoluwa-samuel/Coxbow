@@ -6,7 +6,7 @@ const phone = () => `0805${String(++seq).padStart(4, "0")}${String(Math.floor(Ma
 
 async function createBooking(request: APIRequestContext, over: Record<string, unknown> = {}) {
   const res = await request.post("/api/bookings", {
-    data: { idempotencyKey: crypto.randomUUID(), serviceSlug: "residential-cleaning", propertyType: "apartment", bedrooms: 2, bathrooms: 1, sizeSqm: 70, materials: "company_supplies", state: "Lagos", city: "Yaba", address: "21 Admin Test Road", date: openDate(15), timeSlotId: "morning", customerName: "Admin Flow", customerPhone: phone(), consent: true, ...over },
+    data: { idempotencyKey: crypto.randomUUID(), serviceSlug: "residential-cleaning", propertyType: "apartment", bedrooms: 2, bathrooms: 1, sizeSqm: 70, materials: "company_supplies", state: "Lagos", city: "Yaba", address: "21 Admin Test Road", date: openDate(300), timeSlotId: "morning", customerName: "Admin Flow", customerPhone: phone(), consent: true, ...over },
   });
   expect(res.status()).toBe(201);
   return res.json() as Promise<{ reference: string; accessToken: string }>;
@@ -88,7 +88,7 @@ test.describe("admin workflow", () => {
     const cleanerCtx = await as(browser, "cleaner");
     const cleaner = await cleanerCtx.newPage();
     await cleaner.goto("/admin/jobs");
-    await cleaner.getByRole("link", { name: openDate(15) }).first().click();
+    await cleaner.getByRole("link", { name: openDate(300) }).first().click();
     await cleaner.getByRole("button", { name: "Start job" }).click();
     await expect(cleaner.getByText("Booking is now in progress.")).toBeVisible();
     cleaner.on("dialog", (d) => d.accept());
@@ -99,7 +99,7 @@ test.describe("admin workflow", () => {
   });
 
   test("the same cleaner cannot be double-booked", async ({ browser, request }) => {
-    const date = openDate(16);
+    const date = openDate(310);
     const [one, two] = [await createBooking(request, { date, timeSlotId: "midday" }), await createBooking(request, { date, timeSlotId: "midday" })];
     const ctx = await as(browser, "manager");
     const page = await ctx.newPage();
@@ -120,7 +120,7 @@ test.describe("admin workflow", () => {
   });
 
   test("quotation: staff send a price, the customer accepts, then staff confirm", async ({ browser, request, page }) => {
-    const b = await createBooking(request, { serviceSlug: "post-construction-cleaning", materials: undefined, date: openDate(17) });
+    const b = await createBooking(request, { serviceSlug: "post-construction-cleaning", materials: undefined, date: openDate(320) });
     const adminCtx = await as(browser, "admin");
     const admin = await adminCtx.newPage();
     admin.on("dialog", (d) => d.accept());

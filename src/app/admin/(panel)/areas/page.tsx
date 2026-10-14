@@ -30,6 +30,7 @@ export default async function AreasAdmin() {
             <ActionForm action={saveSettings} submitLabel="Save rules">
               <fieldset><legend className={labelCls}>Operating days</legend><div className="flex flex-wrap gap-3">{DAYS.map((d, i) => <label key={d} className="flex items-center gap-1.5 text-sm"><input type="checkbox" name="day" value={i} defaultChecked={settings.operatingDays.includes(i)} className="size-4 accent-forest-800" />{d.slice(0, 3)}</label>)}</div></fieldset>
               <div><label className={labelCls} htmlFor="maxAdvanceDays">How far ahead customers can book (days)</label><input id="maxAdvanceDays" name="maxAdvanceDays" type="number" min={1} max={365} defaultValue={settings.maxAdvanceDays} className={inputCls} /></div>
+              <div><label className={labelCls} htmlFor="customerChangeNoticeHours">Customers can cancel or reschedule themselves up to this many hours before the start</label><input id="customerChangeNoticeHours" name="customerChangeNoticeHours" type="number" min={0} max={720} defaultValue={settings.customerChangeNoticeHours} className={inputCls} /><p className="mt-1 text-xs text-ink-mute">Inside this window customers are asked to contact you. Match your published cancellation policy.</p></div>
             </ActionForm>
           </Card>
           <Card title="Time slots and capacity">

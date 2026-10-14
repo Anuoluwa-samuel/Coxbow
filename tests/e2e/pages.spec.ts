@@ -58,6 +58,11 @@ test.describe("public pages", () => {
   test("security headers and no-store on private responses", async ({ request }) => {
     const r = await request.get("/admin/login");
     expect(r.status()).toBe(200);
+    const h = r.headers();
+    expect(h["x-content-type-options"]).toBe("nosniff");
+    expect(h["x-frame-options"]).toBe("DENY");
+    expect(h["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+    expect(h["x-powered-by"]).toBeUndefined();
     const api = await request.get("/api/availability?service=deep-cleaning&date=2999-01-01");
     expect(api.headers()["cache-control"]).toContain("no-store");
   });

@@ -16,6 +16,7 @@ const ITEMS: (NavItem & { perm: Permission })[] = [
   { href: "/admin/areas", label: "Areas & hours", perm: "areas.write" },
   { href: "/admin/staff", label: "Staff", perm: "staff.manage" },
   { href: "/admin/payments", label: "Payments", perm: "payments.read" },
+  { href: "/admin/reviews", label: "Reviews", perm: "reviews.moderate" },
   { href: "/admin/audit", label: "Audit log", perm: "audit.read" },
 ];
 

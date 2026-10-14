@@ -4,7 +4,7 @@ export function PageShell({ eyebrow, title, lead, children }: { eyebrow?: string
   return (
     <Container className="py-14 lg:py-20">
       <header className="max-w-3xl">
-        {eyebrow ? <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-brass">{eyebrow}</p> : null}
+        {eyebrow ? <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-brass-text">{eyebrow}</p> : null}
         <h1 className="text-balance text-4xl sm:text-5xl">{title}</h1>
         {lead ? <p className="mt-5 text-lg text-ink-soft">{lead}</p> : null}
       </header>

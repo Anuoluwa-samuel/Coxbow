@@ -15,6 +15,13 @@
       "when": 1791980314445,
       "tag": "0001_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791984111297,
+      "tag": "0002_media",
+      "breakpoints": true
     }
   ]
 }

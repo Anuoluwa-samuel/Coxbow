@@ -23,6 +23,8 @@ async function main() {
   const tables = await db.execute<{ tablename: string }>(sql`select tablename from pg_tables where schemaname = 'public'`);
   await db.execute(sql.raw(`TRUNCATE TABLE ${[...tables].map((t) => `"${t.tablename}"`).join(", ")} RESTART IDENTITY CASCADE`));
   await seedDemoCatalog(db, { slotCapacity: 50 });
+  // A wide booking window lets each e2e spec and viewport use its own range of dates.
+  await db.execute(sql`update business_settings set value = jsonb_set(value, '{maxAdvanceDays}', '365') where key = 'booking'`);
   for (const [role, u] of Object.entries(USERS)) {
     const [row] = await db.insert(s.users).values({ email: u.email, passwordHash: await hashPassword(u.password), fullName: u.name, role: role as "admin" }).returning({ id: s.users.id });
     if (role === "cleaner") await db.insert(s.staffProfiles).values({ userId: row.id });

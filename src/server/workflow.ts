@@ -52,11 +52,12 @@ export async function transitionBooking(db: Db, actor: Actor, bookingId: string,
   return db.transaction((tx) => transitionInTx(tx, actor, bookingId, to, opts));
 }
 
-async function transitionInTx(tx: Tx, actor: Actor, bookingId: string, to: BookingStatus, opts: { note?: string; reason?: string }) {
+/** `actor` is null when the customer acts through their private link. */
+export async function transitionInTx(tx: Tx, actor: Actor | null, bookingId: string, to: BookingStatus, opts: { note?: string; reason?: string }) {
   const b = await lockBooking(tx, bookingId);
   if (!canTransition(b.status, to)) throw new AppError("invalid_transition", `A ${b.status} booking cannot become ${to}`);
 
-  if ((to === "in_progress" || to === "completed") && actor.role === "cleaner" && !(await activeAssignment(tx, bookingId, actor.id))) {
+  if ((to === "in_progress" || to === "completed") && actor?.role === "cleaner" && !(await activeAssignment(tx, bookingId, actor.id))) {
     throw new AppError("forbidden", "You are not assigned to this job");
   }
   if ((to === "cancelled" || to === "rejected") && !opts.reason) throw new AppError("validation", "A reason is required", { reason: ["Required"] });
@@ -84,8 +85,8 @@ async function transitionInTx(tx: Tx, actor: Actor, bookingId: string, to: Booki
     await tx.update(bookingAssignments).set({ status: "released" }).where(and(eq(bookingAssignments.bookingId, bookingId), eq(bookingAssignments.status, "active")));
     await tx.update(quotations).set({ status: "superseded" }).where(and(eq(quotations.bookingId, bookingId), sql`${quotations.status} IN ('draft','sent')`));
   }
-  await tx.insert(bookingStatusHistory).values({ bookingId, fromStatus: b.status, toStatus: to, actorId: actor.id, note: opts.note ?? opts.reason ?? null });
-  await writeAudit(tx, actor.id, `booking.${to}`, "booking", bookingId, { from: b.status, reason: opts.reason });
+  await tx.insert(bookingStatusHistory).values({ bookingId, fromStatus: b.status, toStatus: to, actorId: actor?.id ?? null, note: opts.note ?? opts.reason ?? null });
+  await writeAudit(tx, actor?.id ?? null, `booking.${to}`, "booking", bookingId, { from: b.status, reason: opts.reason });
 
   if (["confirmed", "scheduled", "completed", "cancelled", "rejected"].includes(to)) {
     const [c] = await tx.select({ email: customers.email }).from(customers).where(eq(customers.id, b.customerId)).limit(1);
@@ -166,38 +167,42 @@ export async function unassignStaff(db: Db, actor: Actor, bookingId: string, sta
   });
 }
 
+export interface RescheduleRules { minNoticeHours: number; noteLabel: string }
+
 /** Moves a booking to a new date/slot, re-checking capacity and moving any assignments with it. History is kept. */
+export async function rescheduleInTx(tx: Tx, actor: Actor | null, bookingId: string, date: string, slotId: string, rules: RescheduleRules, now: Date) {
+  const [slots, settings] = await Promise.all([fetchTimeSlots(tx as unknown as Db), fetchBookingSettings(tx as unknown as Db)]);
+  const slot = slots.find((s) => s.id === slotId);
+  if (!slot) throw new AppError("validation", "Unknown time slot", { timeSlotId: ["Choose a valid time slot"] });
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`slot:${date}:${slot.id}`}, 0))`);
+  const b = await lockBooking(tx, bookingId);
+  if (!["requested", "quoted", "confirmed", "scheduled"].includes(b.status)) throw new AppError("invalid_transition", `A ${b.status} booking cannot be rescheduled`);
+  const sameSlot = b.scheduledDate === date && b.timeSlotId === slot.id;
+  const held = await countHeld(tx, date, slot.id);
+  const check = checkSlot({ date, slot, now, minNoticeHours: rules.minNoticeHours, operatingDays: settings.operatingDays, maxAdvanceDays: settings.maxAdvanceDays, bookedCount: sameSlot ? held - 1 : held, capacity: slot.capacity });
+  if (!check.ok) throw new AppError("slot_unavailable", "That time slot is not available", { timeSlotId: [check.reason] });
+
+  const startsAt = lagosInstant(date, slot.startHour);
+  const endsAt = lagosInstant(date, slot.endHour);
+  try {
+    await tx.execute(sql`savepoint resched_try`);
+    await tx.update(bookingAssignments).set({ startsAt, endsAt }).where(and(eq(bookingAssignments.bookingId, bookingId), eq(bookingAssignments.status, "active")));
+    await tx.execute(sql`release savepoint resched_try`);
+  } catch (e) {
+    await tx.execute(sql`rollback to savepoint resched_try`);
+    if (sqlState(e) === "23P01") throw new AppError("conflict", "An assigned cleaner is already booked at the new time");
+    throw e;
+  }
+  await tx.update(bookings).set({ scheduledDate: date, timeSlotId: slot.id, startsAt, endsAt, updatedAt: now }).where(eq(bookings.id, bookingId));
+  await tx.insert(bookingStatusHistory).values({ bookingId, fromStatus: b.status, toStatus: b.status, actorId: actor?.id ?? null, note: `${rules.noteLabel} from ${b.scheduledDate} ${b.timeSlotId} to ${date} ${slot.id}` });
+  await writeAudit(tx, actor?.id ?? null, "booking.reschedule", "booking", bookingId, { from: { date: b.scheduledDate, slot: b.timeSlotId }, to: { date, slot: slot.id }, by: actor ? "staff" : "customer" });
+}
+
 export async function rescheduleBooking(db: Db, actor: Actor, bookingId: string, date: string, slotId: string, now = new Date()) {
   need(actor, "bookings.manage");
   if (!isValidDateString(date)) throw new AppError("validation", "Invalid date", { date: ["Choose a valid date"] });
-  const [slots, settings] = await Promise.all([fetchTimeSlots(db), fetchBookingSettings(db)]);
-  const slot = slots.find((s) => s.id === slotId);
-  if (!slot) throw new AppError("validation", "Unknown time slot", { timeSlotId: ["Choose a valid time slot"] });
-
-  return db.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`slot:${date}:${slot.id}`}, 0))`);
-    const b = await lockBooking(tx, bookingId);
-    if (!["requested", "quoted", "confirmed", "scheduled"].includes(b.status)) throw new AppError("invalid_transition", `A ${b.status} booking cannot be rescheduled`);
-    const sameSlot = b.scheduledDate === date && b.timeSlotId === slot.id;
-    const held = await countHeld(tx, date, slot.id);
-    const check = checkSlot({ date, slot, now, minNoticeHours: 0, operatingDays: settings.operatingDays, maxAdvanceDays: settings.maxAdvanceDays, bookedCount: sameSlot ? held - 1 : held, capacity: slot.capacity });
-    if (!check.ok) throw new AppError("slot_unavailable", "That time slot is not available", { timeSlotId: [check.reason] });
-
-    const startsAt = lagosInstant(date, slot.startHour);
-    const endsAt = lagosInstant(date, slot.endHour);
-    try {
-      await tx.execute(sql`savepoint resched_try`);
-      await tx.update(bookingAssignments).set({ startsAt, endsAt }).where(and(eq(bookingAssignments.bookingId, bookingId), eq(bookingAssignments.status, "active")));
-      await tx.execute(sql`release savepoint resched_try`);
-    } catch (e) {
-      await tx.execute(sql`rollback to savepoint resched_try`);
-      if (sqlState(e) === "23P01") throw new AppError("conflict", "An assigned cleaner is already booked at the new time");
-      throw e;
-    }
-    await tx.update(bookings).set({ scheduledDate: date, timeSlotId: slot.id, startsAt, endsAt, updatedAt: now }).where(eq(bookings.id, bookingId));
-    await tx.insert(bookingStatusHistory).values({ bookingId, fromStatus: b.status, toStatus: b.status, actorId: actor.id, note: `Rescheduled from ${b.scheduledDate} ${b.timeSlotId} to ${date} ${slot.id}` });
-    await writeAudit(tx, actor.id, "booking.reschedule", "booking", bookingId, { from: { date: b.scheduledDate, slot: b.timeSlotId }, to: { date, slot: slot.id } });
-  });
+  // Staff may override the customer notice period, so no minimum notice applies here.
+  return db.transaction((tx) => rescheduleInTx(tx, actor, bookingId, date, slotId, { minNoticeHours: 0, noteLabel: "Rescheduled" }, now));
 }
 
 export async function addBookingNote(db: Db, actor: Actor, bookingId: string, body: string) {

@@ -29,7 +29,7 @@ describe("authorisation: unauthorised users cannot use admin functions", () => {
       expect(await code(upsertAddon(db, actor, "residential-cleaning", { slug: "a-b", name: "Ab", priceKobo: 1, enabled: true }))).toBe("forbidden");
       expect(await code(upsertArea(db, actor, { state: "Lagos", city: "Ikorodu", neighbourhoods: [], enabled: true }))).toBe("forbidden");
       expect(await code(updateTimeSlot(db, actor, "morning", { capacity: 9, enabled: true }))).toBe("forbidden");
-      expect(await code(updateBookingSettings(db, actor, { operatingDays: [1], maxAdvanceDays: 5 }))).toBe("forbidden");
+      expect(await code(updateBookingSettings(db, actor, { operatingDays: [1], maxAdvanceDays: 5, customerChangeNoticeHours: 24 }))).toBe("forbidden");
     }
     expect((await fetchService(db, "residential-cleaning"))?.pricing.model).toBe("by_size"); // unchanged
   });
@@ -90,7 +90,7 @@ describe("admin catalogue management", () => {
     await expect(createBooking(db, bookingPayload({ city: "Ikorodu" }), NOW)).resolves.toBeTruthy();
     await upsertArea(db, admin, { state: "Lagos", city: "Ikorodu", neighbourhoods: [], enabled: false });
     expect(await code(createBooking(db, bookingPayload({ city: "Ikorodu" }), NOW))).toBe("not_serviceable");
-    await updateBookingSettings(db, admin, { operatingDays: [1, 2, 3, 4, 5, 6, 0], maxAdvanceDays: 60 });
+    await updateBookingSettings(db, admin, { operatingDays: [1, 2, 3, 4, 5, 6, 0], maxAdvanceDays: 60, customerChangeNoticeHours: 24 });
     await expect(createBooking(db, bookingPayload({ date: "2030-01-13" }), NOW)).resolves.toBeTruthy(); // Sunday now open
     await updateTimeSlot(db, admin, "morning", { capacity: 1, enabled: true });
     expect(await code(createBooking(db, bookingPayload({ date: "2030-01-13" }), NOW))).toBe("slot_unavailable");

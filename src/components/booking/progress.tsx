@@ -15,7 +15,7 @@ export function Progress({ current }: { current: number }) {
                 className={cn(
                   "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
                   done && "bg-forest-800 text-ivory",
-                  active && "bg-brass text-white",
+                  active && "bg-brass-text text-white",
                   !done && !active && "bg-sand text-ink-mute",
                 )}
               >

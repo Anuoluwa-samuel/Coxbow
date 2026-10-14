@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { db } from "@/server/db/client";
 import { requirePermission } from "@/server/auth";
 import { runAction, str, nairaToKoboStr, type ActionState } from "@/server/action";
-import { createService, updateService, upsertAddon } from "@/server/catalog-admin";
+import { createService, deleteCategory, saveCategory, updateService, upsertAddon } from "@/server/catalog-admin";
+import { removeServiceImage } from "@/server/media";
 
 export async function createServiceAction(_p: ActionState, fd: FormData): Promise<ActionState> {
   const r = await runAction(async () => {
@@ -26,7 +27,7 @@ export async function updateServiceAction(slug: string, _p: ActionState, fd: For
       includes: str(fd, "includes"), excludes: str(fd, "excludes"), extraCharges: str(fd, "extraCharges"), pricingNote: str(fd, "pricingNote"),
       pricingModel: str(fd, "pricingModel"), baseNaira: str(fd, "baseNaira"), tiers: str(fd, "tiers"),
       minNoticeHours: str(fd, "minNoticeHours"), durationMinutes: str(fd, "durationMinutes"),
-      enabled: fd.get("enabled") === "on", popular: fd.get("popular") === "on",
+      enabled: fd.get("enabled") === "on", popular: fd.get("popular") === "on", categorySlug: str(fd, "categorySlug") || undefined,
     });
     updateTag("catalog");
     return "Service saved.";
@@ -39,5 +40,32 @@ export async function upsertAddonAction(slug: string, _p: ActionState, fd: FormD
     await upsertAddon(db, actor, slug, { slug: str(fd, "addonSlug"), name: str(fd, "name"), priceKobo: nairaToKoboStr(str(fd, "price") || "0"), enabled: fd.get("enabled") === "on" });
     updateTag("catalog");
     return "Add-on saved.";
+  });
+}
+
+export async function saveCategoryAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const actor = await requirePermission("services.write");
+    await saveCategory(db, actor, { slug: str(fd, "slug"), name: str(fd, "name"), audience: str(fd, "audience") as "both", description: str(fd, "description"), sortOrder: Number(str(fd, "sortOrder") || 0) });
+    updateTag("catalog");
+    return "Category saved.";
+  });
+}
+
+export async function deleteCategoryAction(slug: string, _p: ActionState, _fd: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const actor = await requirePermission("services.write");
+    await deleteCategory(db, actor, slug);
+    updateTag("catalog");
+    return "Category deleted.";
+  });
+}
+
+export async function removeImageAction(slug: string, _p: ActionState, _fd: FormData): Promise<ActionState> {
+  return runAction(async () => {
+    const actor = await requirePermission("services.write");
+    await removeServiceImage(db, actor, slug);
+    updateTag("catalog");
+    return "Photo removed.";
   });
 }

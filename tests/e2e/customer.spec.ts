@@ -3,7 +3,7 @@ import { openDate as baseOpenDate } from "./constants";
 import { withDb } from "./db";
 
 /** Each viewport project books on different days, so runs never compete for the same slot. */
-const OFFSET: Record<string, number> = { desktop: 0, tablet: 14, mobile: 28 };
+const OFFSET: Record<string, number> = { desktop: 0, tablet: 60, mobile: 120 };
 const openDate = (days: number) => baseOpenDate(days + (OFFSET[test.info().project.name] ?? 0));
 
 let phoneSeq = Math.floor(Math.random() * 9000) + 1000;

@@ -78,6 +78,9 @@ export interface Service {
   /** Typical job duration used for scheduling. */
   durationMinutes: number;
   sortOrder: number;
+  /** Uploaded photo, served from /media/{imageId}. Absent until an admin uploads one. */
+  imageId?: string;
+  imageAlt?: string;
 }
 
 export interface ServiceCategory {
@@ -85,6 +88,7 @@ export interface ServiceCategory {
   name: string;
   audience: "residential" | "commercial" | "both";
   description: string;
+  sortOrder?: number;
 }
 
 export interface ServiceArea {

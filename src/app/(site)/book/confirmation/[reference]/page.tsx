@@ -5,6 +5,12 @@ import { CheckCircle2 } from "lucide-react";
 import { Container } from "@/components/ui/section";
 import { ButtonLink } from "@/components/ui/button";
 import { QuotationActions } from "@/components/booking/quotation-actions";
+import { PayNow } from "@/components/booking/pay-now";
+import { PaymentReturn } from "@/components/booking/payment-return";
+import { ChangeBooking } from "@/components/booking/change-booking";
+import { ReviewForm } from "@/components/booking/review-form";
+import { paystackConfigured } from "@/server/paystack";
+import { lagosDateString } from "@/lib/availability";
 import { db } from "@/server/db/client";
 import { getBookingForCustomer } from "@/server/bookings";
 import { formatNaira } from "@/lib/money";
@@ -29,9 +35,12 @@ async function Details({ params, searchParams }: { params: PageProps<"/book/conf
   const { reference } = await params;
   const sp = await searchParams;
   const token = Array.isArray(sp.t) ? sp.t[0] : sp.t;
+  const payRef = Array.isArray(sp.reference) ? sp.reference[0] : sp.reference;
   const b = await getBookingForCustomer(db, reference, token);
   if (!b) notFound();
   const copy = STATUS_COPY[b.status];
+  const outstanding = b.payment.outstandingKobo;
+  const payable = (["confirmed", "scheduled", "in_progress", "completed"] as string[]).includes(b.status) && b.finalKobo !== null && (outstanding ?? 0) > 0;
   const wa = whatsappLink(`Hello, my booking reference is ${b.reference}.`);
 
   return (
@@ -75,6 +84,35 @@ async function Details({ params, searchParams }: { params: PageProps<"/book/conf
         </section>
       ) : null}
       {b.quotation?.status === "accepted" ? <p className="mt-8 rounded-[var(--radius-control)] bg-sage-100 p-4 font-medium">You accepted the quotation of {formatNaira(b.quotation.amountKobo)}. We will confirm your booking shortly.</p> : null}
+
+      {payRef && token ? <PaymentReturn bookingReference={b.reference} token={token} paymentReference={payRef} /> : null}
+
+      {b.finalKobo !== null && b.status !== "cancelled" && b.status !== "rejected" ? (
+        <section className="mt-8 rounded-[var(--radius-card)] border border-line bg-paper p-6" aria-labelledby="pay-heading">
+          <h2 id="pay-heading" className="text-xl">Payment</h2>
+          <dl className="mt-3 space-y-1 text-sm">
+            <div className="flex justify-between"><dt>Agreed price</dt><dd>{formatNaira(b.finalKobo)}</dd></div>
+            <div className="flex justify-between"><dt>Paid</dt><dd>{formatNaira(b.payment.netPaidKobo)}</dd></div>
+            <div className="flex justify-between font-semibold"><dt>Balance</dt><dd>{formatNaira(outstanding ?? 0)}</dd></div>
+          </dl>
+          {payable && token ? (
+            <div className="mt-4">
+              {paystackConfigured() && b.hasEmail ? <PayNow reference={b.reference} token={token} label={`Pay ${formatNaira(outstanding ?? 0)} now`} />
+                : <p className="text-sm text-ink-soft">{!paystackConfigured() ? "Online payment is not available yet. Please contact us to arrange payment." : "Add an email address to pay online. Please contact us and we will add it."}</p>}
+            </div>
+          ) : (outstanding ?? 0) === 0 ? <p className="mt-3 text-sm font-medium text-forest-700">Paid in full. Thank you.</p> : null}
+        </section>
+      ) : null}
+
+      {token && (b.changes.canReschedule || b.changes.canCancel || (["requested", "quoted", "confirmed", "scheduled"] as string[]).includes(b.status)) ? (
+        <ChangeBooking reference={b.reference} token={token} serviceSlug={b.serviceSlug} minDate={lagosDateString(new Date())} canReschedule={b.changes.canReschedule} canCancel={b.changes.canCancel}
+          rescheduleBlockedReason={b.changes.rescheduleBlockedReason} cancelBlockedReason={b.changes.cancelBlockedReason} noticeHours={b.changes.noticeHours} />
+      ) : null}
+
+      {b.status === "completed" && token ? (
+        b.review ? <p className="mt-8 rounded-[var(--radius-control)] bg-sage-100 p-4 text-sm font-medium">Thank you for your review ({b.review.rating}/5){b.review.approved ? "" : ". It will appear on our site once our team has checked it."}</p>
+          : <ReviewForm reference={b.reference} token={token} />
+      ) : null}
 
       <section className="mt-8" aria-labelledby="contact-heading">
         <h2 id="contact-heading" className="text-xl">Questions?</h2>

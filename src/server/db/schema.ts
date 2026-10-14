@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
-  boolean, check, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, smallint, text,
+  boolean, check, customType, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, smallint, text,
   time, timestamp, uniqueIndex, uuid,
 } from "drizzle-orm/pg-core";
 import type { Faq, PricingConfig, ServiceFields, PropertyType } from "@/lib/catalog-types";
@@ -27,6 +27,8 @@ export const paymentStatus = pgEnum("payment_status", ["pending", "success", "fa
 export const assignmentStatus = pgEnum("assignment_status", ["active", "released"]);
 export const notificationChannel = pgEnum("notification_channel", ["email", "whatsapp", "sms"]);
 export const notificationStatus = pgEnum("notification_status", ["queued", "sent", "failed", "skipped"]);
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "bytea" });
 
 // ---------- Identity ----------
 
@@ -97,6 +99,28 @@ export const serviceCategories = pgTable("service_categories", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
+/**
+ * Uploaded images (service photos). Stored in Postgres so the app needs no extra storage service.
+ * Access goes through src/server/media.ts, which validates type and size. To move to object storage
+ * later, keep this table as the metadata record and swap the byte storage behind that module.
+ */
+export const media = pgTable(
+  "media",
+  {
+    id: id(),
+    contentType: text("content_type").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    bytes: bytea("bytes").notNull(),
+    alt: text("alt").notNull().default(""),
+    createdBy: uuid("created_by").references(() => users.id),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check("media_type_allowed", sql`${t.contentType} IN ('image/jpeg','image/png','image/webp')`),
+    check("media_size_cap", sql`${t.byteSize} > 0 AND ${t.byteSize} <= 2097152`),
+  ],
+);
+
 export const services = pgTable(
   "services",
   {
@@ -123,6 +147,7 @@ export const services = pgTable(
     minNoticeHours: integer("min_notice_hours").notNull().default(24),
     durationMinutes: integer("duration_minutes").notNull().default(180),
     sortOrder: integer("sort_order").notNull().default(0),
+    imageId: uuid("image_id").references(() => media.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

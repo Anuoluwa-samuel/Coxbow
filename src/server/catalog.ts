@@ -1,6 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "./db/client";
+import { listApprovedReviews } from "./reviews";
 import { fetchCategories, fetchService, fetchServiceAreas, fetchServices, fetchTimeSlots } from "./catalog-db";
 import type { Service, ServiceArea, ServiceCategory, TimeSlot } from "@/lib/catalog-types";
 
@@ -44,4 +45,12 @@ export async function listTimeSlots(): Promise<TimeSlot[]> {
   cacheTag("catalog");
   const slots = await fetchTimeSlots(db);
   return slots.map(({ id, label, startHour, endHour }) => ({ id, label, startHour, endHour }));
+}
+
+/** Approved customer reviews only. Tagged separately so moderation refreshes them without touching the catalogue. */
+export async function getApprovedReviews(opts: { serviceSlug?: string; limit?: number } = {}) {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("reviews");
+  return listApprovedReviews(db, opts);
 }

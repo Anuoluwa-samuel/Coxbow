@@ -4,10 +4,10 @@ import { notFound } from "next/navigation";
 import { Check, Clock, X } from "lucide-react";
 import { Container } from "@/components/ui/section";
 import { ButtonLink } from "@/components/ui/button";
-import { PlaceholderImage } from "@/components/ui/placeholder-image";
+import { ServiceImage } from "@/components/ui/service-image";
 import { FaqList } from "@/components/site/faq-list";
 import { priceLabel } from "@/components/home/sections";
-import { getService, listServices } from "@/server/catalog";
+import { getApprovedReviews, getService, listServices } from "@/server/catalog";
 
 
 export async function generateStaticParams() {
@@ -30,7 +30,7 @@ export default async function ServicePage({ params }: PageProps<"/services/[slug
   const { slug } = await params;
   const service = await getService(slug);
   if (!service) notFound();
-  const all = await listServices();
+  const [all, reviews] = await Promise.all([listServices(), getApprovedReviews({ serviceSlug: service.slug, limit: 4 })]);
   const related = service.relatedSlugs.map((r) => all.find((s) => s.slug === r)).filter((s) => s !== undefined);
   const bookHref = `/book?service=${service.slug}`;
 
@@ -43,11 +43,11 @@ export default async function ServicePage({ params }: PageProps<"/services/[slug
           </nav>
           <h1 className="text-balance text-4xl sm:text-5xl">{service.name}</h1>
           <p className="mt-5 max-w-2xl text-lg text-ink-soft">{service.description}</p>
-          <PlaceholderImage label={`${service.name} in progress`} tone="sage" className="mt-8 aspect-[16/9]" />
+          <ServiceImage service={service} priority className="mt-8 aspect-[16/9]" />
         </div>
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-[var(--radius-card)] border border-line bg-paper p-6 shadow-card">
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-brass">Pricing</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-brass-text">Pricing</p>
             <p className="mt-2 font-display text-3xl text-forest-950">{priceLabel(service)}</p>
             <p className="mt-2 text-sm text-ink-soft">{service.pricingNote}</p>
             <p className="mt-4 flex items-center gap-2 text-sm text-ink-soft">
@@ -114,6 +114,21 @@ export default async function ServicePage({ params }: PageProps<"/services/[slug
         <Container className="mt-16">
           <h2 className="text-2xl">Frequently asked questions</h2>
           <div className="mt-6 max-w-3xl"><FaqList faqs={service.faqs} /></div>
+        </Container>
+      ) : null}
+
+      {reviews.length ? (
+        <Container className="mt-16">
+          <h2 className="text-2xl">What customers say</h2>
+          <ul className="mt-6 grid gap-4 md:grid-cols-2">
+            {reviews.map((r, i) => (
+              <li key={i} className="rounded-[var(--radius-card)] border border-line bg-paper p-5">
+                <p aria-label={`${r.rating} out of 5 stars`} className="text-brass-text">{"★".repeat(r.rating)}<span className="text-line">{"★".repeat(5 - r.rating)}</span></p>
+                {r.comment ? <p className="mt-2 text-ink-soft">{r.comment}</p> : null}
+                <p className="mt-3 text-sm font-semibold text-forest-950">{r.firstName}</p>
+              </li>
+            ))}
+          </ul>
         </Container>
       ) : null}
 

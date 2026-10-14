@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, SectionHeading } from "@/components/ui/section";
-import { PlaceholderImage } from "@/components/ui/placeholder-image";
+import { ServiceImage } from "@/components/ui/service-image";
 import { priceLabel } from "@/components/home/sections";
 import { listCategories, listServices } from "@/server/catalog";
 
@@ -28,7 +28,7 @@ export default async function ServicesPage() {
                 {list.map((s) => (
                   <li key={s.slug}>
                     <Link href={`/services/${s.slug}`} className="group grid h-full gap-5 rounded-[var(--radius-card)] border border-line bg-paper p-4 transition-all hover:border-sage-500 hover:shadow-card sm:grid-cols-[9rem_1fr]">
-                      <PlaceholderImage label={s.name} className="aspect-[4/3] sm:aspect-auto sm:min-h-32" tone="sand" />
+                      <ServiceImage service={s} className="aspect-[4/3] sm:aspect-auto sm:h-full sm:min-h-32" tone="sand" />
                       <div className="flex flex-col py-1">
                         <h3 className="text-xl group-hover:text-forest-700">{s.name}</h3>
                         <p className="mt-2 flex-1 text-sm text-ink-soft">{s.summary}</p>
