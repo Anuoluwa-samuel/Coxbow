@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { AdminNav, type NavItem } from "@/components/admin/nav";
 import { Logo } from "@/components/site/logo";
+import { FlashProvider } from "@/components/admin/flash";
 import { Button } from "@/components/ui/button";
 import { clearSession, getCurrentUser } from "@/server/auth";
 import { can, type Permission } from "@/lib/permissions";
@@ -39,7 +40,7 @@ async function Shell({ children }: { children: React.ReactNode }) {
           <form action={logout} className="mt-2"><Button size="sm" variant="outline" className="w-full border-sage-300/40 text-ivory hover:bg-white/10">Sign out</Button></form>
         </div>
       </aside>
-      <div className="min-w-0 p-4 sm:p-6 lg:p-8">{children}</div>
+      <div className="min-w-0 p-4 sm:p-6 lg:p-8"><FlashProvider>{children}</FlashProvider></div>
     </div>
   );
 }

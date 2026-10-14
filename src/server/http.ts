@@ -11,6 +11,9 @@ export function json(data: unknown, init?: ResponseInit) {
 
 /** Maps typed errors to safe responses. Unknown errors are logged without payloads and shown generically. */
 export function errorResponse(e: unknown) {
+  // Next.js uses thrown errors for control flow (dynamic bailout, redirects); they must not become 500s.
+  const digest = e && typeof e === "object" && "digest" in e ? String((e as { digest: unknown }).digest) : "";
+  if (digest.startsWith("NEXT_") || digest.includes("DYNAMIC_SERVER_USAGE") || digest.includes("BAILOUT")) throw e;
   if (e instanceof AppError) {
     return json({ code: e.code, message: e.message, fieldErrors: e.fieldErrors }, { status: e.status });
   }

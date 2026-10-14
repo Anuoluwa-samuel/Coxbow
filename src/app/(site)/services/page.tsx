@@ -15,7 +15,7 @@ export default async function ServicesPage() {
   const [services, categories] = await Promise.all([listServices(), listCategories()]);
   return (
     <Container className="py-14 lg:py-20">
-      <SectionHeading eyebrow="Services" title="Choose the clean that fits" lead="Every service shows its inclusions, exclusions and pricing approach before you commit." />
+      <SectionHeading as="h1" eyebrow="Services" title="Choose the clean that fits" lead="Every service shows its inclusions, exclusions and pricing approach before you commit." />
       <div className="mt-14 space-y-16">
         {categories.map((c) => {
           const list = services.filter((s) => s.categorySlug === c.slug);

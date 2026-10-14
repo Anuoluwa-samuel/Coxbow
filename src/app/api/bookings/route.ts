@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
     // Abuse protection: a handful of submissions per IP per 10 minutes.
-    await enforceRateLimit(request, "booking", 8, 600);
+    await enforceRateLimit(request, "booking", Number(process.env.BOOKING_RATE_LIMIT ?? 8), 600);
     const body = await readJson(request);
     const result = await createBooking(db, body);
     // Send queued emails after the response; failures are recorded, never surfaced to the customer.

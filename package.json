@@ -15,7 +15,9 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:migrate:test": "tsx scripts/migrate.ts --test",
     "db:seed": "tsx scripts/seed.ts",
-    "db:up": "docker compose up -d db"
+    "db:up": "docker compose up -d db",
+    "e2e": "tsx tests/e2e/prepare.ts && playwright test",
+    "e2e:headed": "tsx tests/e2e/prepare.ts && playwright test --headed"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

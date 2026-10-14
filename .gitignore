@@ -44,3 +44,8 @@ next-env.d.ts
 
 # Claude Code local config (never commit)
 .claude/
+
+# Playwright
+/test-results/
+/playwright-report/
+tests/e2e/.auth/

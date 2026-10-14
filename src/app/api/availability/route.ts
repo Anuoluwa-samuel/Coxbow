@@ -1,9 +1,10 @@
-import type { NextRequest } from "next/server";
+import { connection, type NextRequest } from "next/server";
 import { db } from "@/server/db/client";
 import { getSlotAvailability } from "@/server/availability";
 import { enforceRateLimit, errorResponse, json } from "@/server/http";
 
 export async function GET(request: NextRequest) {
+  await connection(); // always dynamic: depends on live bookings and the caller's IP
   try {
     await enforceRateLimit(request, "availability", 60, 60);
     const service = request.nextUrl.searchParams.get("service") ?? "";

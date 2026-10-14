@@ -9,16 +9,19 @@ export function SectionHeading({
   title,
   lead,
   className,
+  as: Tag = "h2",
 }: {
   eyebrow?: string;
   title: string;
   lead?: string;
   className?: string;
+  /** Use "h1" for the page's main heading. */
+  as?: "h1" | "h2";
 }) {
   return (
     <div className={cn("max-w-2xl", className)}>
       {eyebrow ? <p className="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-brass">{eyebrow}</p> : null}
-      <h2 className="text-balance text-3xl sm:text-4xl">{title}</h2>
+      <Tag className="text-balance text-3xl sm:text-4xl">{title}</Tag>
       {lead ? <p className="mt-4 text-lg text-ink-soft">{lead}</p> : null}
     </div>
   );
