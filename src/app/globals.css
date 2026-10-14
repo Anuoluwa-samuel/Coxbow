@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/*
+ * Coxbow design tokens.
+ * Warm ivory ground, deep forest primary, sage secondary, charcoal text,
+ * with a single brass accent used sparingly for emphasis.
+ */
+@theme {
+  --color-ivory: #faf7f0;
+  --color-paper: #ffffff;
+  --color-sand: #f1ece0;
+  --color-line: #e3dccb;
+
+  --color-forest-950: #0f2a20;
+  --color-forest-900: #163a2c;
+  --color-forest-800: #1d4a38;
+  --color-forest-700: #265f48;
+  --color-forest-600: #2f7459;
+
+  --color-sage-100: #e8f0e6;
+  --color-sage-200: #d4e3d0;
+  --color-sage-300: #b7cdb3;
+  --color-sage-500: #7d9c7c;
+
+  --color-charcoal: #232a28;
+  --color-ink-soft: #4a5450;
+  --color-ink-mute: #6b7571;
+
+  --color-brass: #b5833a;
+  --color-brass-soft: #f3e6cd;
+
+  --color-danger: #b3261e;
+  --color-danger-soft: #fbe9e7;
+  --color-warn-soft: #fff3d6;
+
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-control: 0.625rem;
+  --radius-card: 1rem;
+
+  --shadow-card: 0 1px 2px rgb(15 42 32 / 0.05), 0 8px 24px -12px rgb(15 42 32 / 0.12);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-ivory);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: var(--color-forest-950);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brass);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--color-sage-300);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Subtle entrance for hero content; respects reduced motion above. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.rise-2 { animation-delay: 0.08s; }
+.rise-3 { animation-delay: 0.16s; }
