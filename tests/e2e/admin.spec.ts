@@ -23,7 +23,7 @@ test.describe("access control", () => {
   test("wrong credentials show one generic message", async ({ page }) => {
     await page.goto("/admin/login");
     await page.getByLabel("Email").fill(USERS.admin.email);
-    await page.getByLabel("Password").fill("definitely-wrong-password");
+    await page.getByLabel("Password", { exact: true }).fill("definitely-wrong-password");
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.locator("form").getByRole("alert")).toContainText("Incorrect email or password");
     await expect(page).toHaveURL(/\/admin\/login/);

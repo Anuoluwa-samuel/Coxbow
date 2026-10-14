@@ -4,7 +4,7 @@ import { db, schema } from "@/server/db/client";
 import { createBooking } from "@/server/bookings";
 import { createStaffUser, setUserActive } from "@/server/staff";
 import { createService, updateService, updateTimeSlot, upsertArea, upsertAddon, updateBookingSettings, buildPricingConfig } from "@/server/catalog-admin";
-import { dashboardStats, listBookings } from "@/server/admin-queries";
+import { dashboardPanels, dashboardStats, listBookings } from "@/server/admin-queries";
 import { assignStaff, transitionBooking } from "@/server/workflow";
 import { login } from "@/server/auth-core";
 import { fetchService } from "@/server/catalog-db";
@@ -116,6 +116,28 @@ describe("dashboard metrics come from the database", () => {
     expect(await dashboardStats(db, NOW)).toMatchObject({ revenueKobo: 1_500_000, outstandingKobo: 2_500_000 });
     // "Today's jobs" uses the Lagos calendar day.
     expect((await dashboardStats(db, new Date("2030-01-14T23:30:00Z"))).todayJobs).toBe(1);
+  });
+});
+
+describe("dashboard panels", () => {
+  it("buckets only verified payments into rolling 7-day windows and lists recent customers and upcoming jobs", async () => {
+    const manager = await makeUser("manager");
+    const r = await createBooking(db, bookingPayload({ customerName: "Panel Person" }), NOW);
+    const id = (await db.select().from(schema.bookings).where(eq(schema.bookings.reference, r.reference)))[0].id;
+    await transitionBooking(db, manager, id, "confirmed");
+    const day = 86_400_000;
+    const now = new Date(NOW.getTime() + 10 * day);
+    await db.insert(schema.payments).values([
+      { bookingId: id, reference: "P-RECENT", amountKobo: 700_000, status: "success", verifiedAt: now, paidAt: new Date(now.getTime() - 2 * day) },
+      { bookingId: id, reference: "P-OLDER", amountKobo: 300_000, status: "success", verifiedAt: now, paidAt: new Date(now.getTime() - 9 * day) },
+      { bookingId: id, reference: "P-PENDING", amountKobo: 999_999, status: "pending" },
+    ]);
+    const p = await dashboardPanels(db, now);
+    expect(p.weeks.map((w) => w.kobo)).toEqual([0, 0, 300_000, 700_000]);
+    expect(p.totalBookings).toBe(1);
+    expect(p.customers).toBe(1);
+    expect(p.recent[0].name).toBe("Panel Person");
+    expect(p.upcoming.map((u) => u.reference)).toEqual([r.reference]);
   });
 });
 

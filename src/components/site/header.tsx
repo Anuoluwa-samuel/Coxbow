@@ -33,7 +33,7 @@ export function Header({ phone, telHref }: { phone: string; telHref: string }) {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/80 bg-ivory/95 backdrop-blur supports-[backdrop-filter]:bg-ivory/85">
+    <header className="sticky top-0 z-40 border-b border-line/80 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Logo />
         <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
@@ -45,8 +45,8 @@ export function Header({ phone, telHref }: { phone: string; telHref: string }) {
                 href={l.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-md px-3 py-2 text-[0.95rem] font-medium text-ink-soft transition-colors hover:text-forest-900",
-                  active && "text-forest-900 underline decoration-brass decoration-2 underline-offset-8",
+                  "rounded-md px-3 py-2 text-[0.95rem] font-semibold text-ink-soft transition-colors hover:text-forest-800",
+                  active && "font-bold text-forest-800 underline decoration-forest-700 decoration-2 underline-offset-8",
                 )}
               >
                 {l.label}

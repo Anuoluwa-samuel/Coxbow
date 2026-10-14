@@ -43,7 +43,7 @@ test.describe("customer booking", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("properly cleaned space");
     await expect(page.getByRole("link", { name: "Book a clean" }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Explore services" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "View services" })).toBeVisible();
   });
 
   test("a customer can submit a valid booking and sees a reference only after it is saved", async ({ page }) => {

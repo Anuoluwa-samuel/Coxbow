@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Figtree } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/lib/site-config";
 
-const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", display: "swap" });
-const figtree = Figtree({ subsets: ["latin"], variable: "--font-figtree", display: "swap" });
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -14,11 +13,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-export const viewport: Viewport = { themeColor: "#faf7f0", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#f4faf7", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-NG" className={`${fraunces.variable} ${figtree.variable}`}>
+    <html lang="en-NG" className={jakarta.variable}>
       <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );

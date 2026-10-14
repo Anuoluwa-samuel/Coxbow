@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies, headers } from "next/headers";
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { db } from "./db/client";
 import { destroySession, SESSION_TTL_MS, userFromSessionToken, type SessionUser } from "./auth-core";
@@ -26,6 +27,7 @@ export async function clearSession() {
 }
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
+  await connection(); // session checks depend on the current time and request: always request-time work
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   return userFromSessionToken(db, token);
 }

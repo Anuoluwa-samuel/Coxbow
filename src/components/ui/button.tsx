@@ -3,15 +3,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const buttonStyles = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-px",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--radius-control)] font-semibold shadow-sm shadow-forest-950/5 transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-px",
   {
     variants: {
       variant: {
-        primary: "bg-forest-800 text-ivory hover:bg-forest-900",
+        primary: "bg-forest-800 text-white hover:bg-forest-900 hover:shadow-md hover:shadow-forest-800/25",
         secondary: "bg-sage-200 text-forest-900 hover:bg-sage-300",
-        outline: "border border-forest-800/30 text-forest-900 hover:bg-forest-800/5",
+        outline: "border border-forest-800/40 bg-white text-forest-900 hover:bg-sage-100",
         ghost: "text-forest-900 hover:bg-forest-800/5",
-        light: "bg-ivory text-forest-900 hover:bg-white",
+        light: "bg-white text-forest-900 hover:bg-sage-100",
         danger: "bg-danger text-white hover:opacity-90",
       },
       size: {

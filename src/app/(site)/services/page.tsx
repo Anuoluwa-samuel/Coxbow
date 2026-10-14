@@ -24,15 +24,15 @@ export default async function ServicesPage() {
             <section key={c.slug} aria-labelledby={`cat-${c.slug}`}>
               <h2 id={`cat-${c.slug}`} className="text-2xl">{c.name}</h2>
               <p className="mt-1 text-ink-soft">{c.description}</p>
-              <ul className="mt-6 grid gap-5 md:grid-cols-2">
+              <ul className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {list.map((s) => (
                   <li key={s.slug}>
-                    <Link href={`/services/${s.slug}`} className="group grid h-full gap-5 rounded-[var(--radius-card)] border border-line bg-paper p-4 transition-all hover:border-sage-500 hover:shadow-card sm:grid-cols-[9rem_1fr]">
-                      <ServiceImage service={s} className="aspect-[4/3] sm:aspect-auto sm:h-full sm:min-h-32" tone="sand" />
-                      <div className="flex flex-col py-1">
-                        <h3 className="text-xl group-hover:text-forest-700">{s.name}</h3>
+                    <Link href={`/services/${s.slug}`} className="group flex h-full flex-col overflow-hidden rounded-[var(--radius-card)] border border-line bg-paper transition-all duration-200 hover:-translate-y-1 hover:border-sage-500 hover:shadow-card">
+                      <ServiceImage service={s} className="aspect-[4/3] rounded-none" tone="sand" />
+                      <div className="flex flex-1 flex-col p-5">
+                        <h3 className="text-xl group-hover:text-forest-800">{s.name}</h3>
                         <p className="mt-2 flex-1 text-sm text-ink-soft">{s.summary}</p>
-                        <p className="mt-3 text-sm font-semibold text-forest-800">{priceLabel(s)}</p>
+                        <p className="mt-4 text-sm font-bold text-forest-800">{priceLabel(s)}</p>
                       </div>
                     </Link>
                   </li>

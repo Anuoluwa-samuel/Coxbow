@@ -6,41 +6,53 @@
  * with a single brass accent used sparingly for emphasis.
  */
 @theme {
-  --color-ivory: #faf7f0;
+  /* Surfaces: bright white with a soft mint wash */
+  --color-ivory: #f4faf7;
   --color-paper: #ffffff;
-  --color-sand: #f1ece0;
-  --color-line: #e3dccb;
+  --color-sand: #e9f4ee;
+  --color-line: #dcebe3;
 
-  --color-forest-950: #0f2a20;
-  --color-forest-900: #163a2c;
-  --color-forest-800: #1d4a38;
-  --color-forest-700: #265f48;
-  --color-forest-600: #2f7459;
+  /* Primary green (names kept from the first design pass; "forest" now means green + deep teal) */
+  --color-forest-950: #0b2d3c; /* deep teal-navy: headings, sidebar, footer, CTA banner */
+  --color-forest-900: #066a35; /* dark green: hover, text on mint */
+  --color-forest-800: #088040; /* primary green: buttons, links (5.0:1 on white) */
+  --color-forest-700: #0c9a4e; /* icons and decoration */
+  --color-forest-600: #19b862;
 
-  --color-sage-100: #e8f0e6;
-  --color-sage-200: #d4e3d0;
-  --color-sage-300: #b7cdb3;
-  --color-sage-500: #7d9c7c;
+  /* Mint tints */
+  --color-sage-100: #e4f5ec;
+  --color-sage-200: #cdeedd;
+  --color-sage-300: #a9dfc3;
+  --color-sage-500: #4fb07f;
 
-  --color-charcoal: #232a28;
-  --color-ink-soft: #4a5450;
-  --color-ink-mute: #596460;
+  /* Pastel tints for icon chips and stat cards */
+  --color-sky-100: #e3f1fb;
+  --color-violet-100: #eee9fb;
+  --color-peach-100: #fdeede;
+  --color-sky-700: #1b6aa5;
+  --color-violet-700: #5b3fb0;
+  --color-peach-700: #a85a00;
 
-  --color-brass: #b5833a; /* decorative, and text on dark backgrounds only */
-  --color-brass-text: #7f5817; /* text on light backgrounds: >= 5.1:1 on every light surface */
-  --color-brass-soft: #f3e6cd;
+  --color-charcoal: #1b2b33;
+  --color-ink-soft: #3f525c;
+  --color-ink-mute: #56666f;
+
+  /* Warm yellow accent (the gloves): decorative, or text on dark backgrounds only */
+  --color-brass: #f2b705;
+  --color-brass-text: #7a5200; /* amber text on light backgrounds */
+  --color-brass-soft: #fdf3cf;
 
   --color-danger: #b3261e;
   --color-danger-soft: #fbe9e7;
-  --color-warn-soft: #fff3d6;
+  --color-warn-soft: #fff6dc;
 
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 
-  --radius-control: 0.625rem;
-  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+  --radius-card: 1.25rem;
 
-  --shadow-card: 0 1px 2px rgb(15 42 32 / 0.05), 0 8px 24px -12px rgb(15 42 32 / 0.12);
+  --shadow-card: 0 1px 2px rgb(11 45 60 / 0.04), 0 12px 32px -14px rgb(11 45 60 / 0.16);
 }
 
 html {
@@ -49,7 +61,8 @@ html {
 }
 
 body {
-  background: var(--color-ivory);
+  background: linear-gradient(180deg, #e9f7f0 0, var(--color-ivory) 520px);
+  background-color: var(--color-ivory);
   color: var(--color-charcoal);
   font-family: var(--font-sans);
   font-size: 1rem;
@@ -59,14 +72,14 @@ body {
 
 h1, h2, h3, h4 {
   font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.015em;
-  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
   color: var(--color-forest-950);
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-brass);
+  outline: 3px solid var(--color-forest-700);
   outline-offset: 2px;
   border-radius: 4px;
 }

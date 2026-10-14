@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, lt, lte, or, sql } from "drizzle-orm";
 import type { Db } from "./db/client";
 import {
   auditLogs, bookingAssignments, bookingItems, bookingNotes, bookingStatusHistory, bookings, customers, payments, quotations, refunds,
@@ -123,4 +123,33 @@ export async function upcomingAssignments(db: Db, staffId: string, now = new Dat
     .from(bookingAssignments).innerJoin(bookings, eq(bookings.id, bookingAssignments.bookingId)).innerJoin(services, eq(services.id, bookings.serviceId))
     .where(and(eq(bookingAssignments.staffId, staffId), eq(bookingAssignments.status, "active"), gte(bookingAssignments.endsAt, now)))
     .orderBy(asc(bookingAssignments.startsAt)).limit(20);
+}
+
+/** Extra figures for the dashboard panels. All values come from the database. */
+export async function dashboardPanels(db: Db, now = new Date()) {
+  const today = lagosDateString(now);
+  const [[b], [c], [s]] = await Promise.all([
+    db.select({ n: sql<number>`count(*)::int` }).from(bookings),
+    db.select({ n: sql<number>`count(*)::int` }).from(customers),
+    db.select({ n: sql<number>`count(*)::int` }).from(staffProfiles).where(eq(staffProfiles.active, true)),
+  ]);
+
+  // Verified payments received in four rolling 7-day windows ending now (oldest first).
+  const DAY = 86_400_000;
+  const weeks = await Promise.all([3, 2, 1, 0].map(async (ago) => {
+    const to = new Date(now.getTime() - ago * 7 * DAY);
+    const from = new Date(to.getTime() - 7 * DAY);
+    const [r] = await db.select({ n: sql<number>`coalesce(sum(${payments.amountKobo}),0)::bigint` }).from(payments)
+      .where(and(inArray(payments.status, ["success", "partially_refunded", "refunded"]), sql`${payments.verifiedAt} IS NOT NULL`, gte(payments.paidAt, from), lt(payments.paidAt, to)));
+    return { label: ago === 0 ? "Last 7 days" : ago === 1 ? "Previous week" : `${ago} weeks before`, kobo: Number(r.n) };
+  }));
+
+  const upcoming = await db.select({ id: bookings.id, reference: bookings.reference, status: bookings.status, date: bookings.scheduledDate, slot: timeSlots.label, service: services.name, customer: customers.fullName })
+    .from(bookings).innerJoin(services, eq(services.id, bookings.serviceId)).innerJoin(timeSlots, eq(timeSlots.id, bookings.timeSlotId)).innerJoin(customers, eq(customers.id, bookings.customerId))
+    .where(and(gte(bookings.scheduledDate, today), inArray(bookings.status, ["confirmed", "scheduled", "in_progress"])))
+    .orderBy(asc(bookings.scheduledDate), asc(bookings.startsAt)).limit(5);
+
+  const recent = await db.select({ id: customers.id, name: customers.fullName, phone: customers.phone, createdAt: customers.createdAt }).from(customers).orderBy(desc(customers.createdAt)).limit(5);
+
+  return { totalBookings: b.n, customers: c.n, activeStaff: s.n, weeks, upcoming, recent };
 }
