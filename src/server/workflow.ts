@@ -25,6 +25,15 @@ async function lockBooking(tx: Tx, bookingId: string) {
   return b;
 }
 
+/**
+ * Serialises changes to a cleaner's schedule. Concurrent inserts against the overlap exclusion constraint can
+ * otherwise deadlock; taking one advisory lock per cleaner (in a fixed order) makes the loser fail cleanly
+ * with the constraint violation instead.
+ */
+async function lockStaffSchedules(tx: Tx, staffIds: string[]) {
+  for (const id of [...new Set(staffIds)].sort()) await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`staff:${id}`}, 0))`);
+}
+
 async function activeAssignment(tx: Tx, bookingId: string, userId: string) {
   const rows = await tx
     .select({ id: bookingAssignments.id })
@@ -138,6 +147,7 @@ export async function respondToQuotation(db: Db, reference: string, token: strin
 export async function assignStaff(db: Db, actor: Actor, bookingId: string, staffId: string) {
   need(actor, "bookings.manage");
   return db.transaction(async (tx) => {
+    await lockStaffSchedules(tx, [staffId]);
     const b = await lockBooking(tx, bookingId);
     if (b.status !== "confirmed" && b.status !== "scheduled") throw new AppError("invalid_transition", "Confirm the booking before assigning staff");
     const [staff] = await tx.select().from(staffProfiles).where(eq(staffProfiles.id, staffId)).limit(1);
@@ -150,6 +160,7 @@ export async function assignStaff(db: Db, actor: Actor, bookingId: string, staff
       await tx.execute(sql`rollback to savepoint assign_try`);
       const code = sqlState(e);
       if (code === "23P01") throw new AppError("conflict", "That cleaner already has a job at this time");
+      if (code === "40P01" || code === "40001") throw new AppError("conflict", "The schedule was changing at the same moment. Please try again.");
       if (code === "23505") throw new AppError("conflict", "That cleaner is already assigned");
       throw e;
     }
@@ -184,6 +195,8 @@ export async function rescheduleInTx(tx: Tx, actor: Actor | null, bookingId: str
 
   const startsAt = lagosInstant(date, slot.startHour);
   const endsAt = lagosInstant(date, slot.endHour);
+  const moving = await tx.select({ staffId: bookingAssignments.staffId }).from(bookingAssignments).where(and(eq(bookingAssignments.bookingId, bookingId), eq(bookingAssignments.status, "active")));
+  await lockStaffSchedules(tx, moving.map((m) => m.staffId));
   try {
     await tx.execute(sql`savepoint resched_try`);
     await tx.update(bookingAssignments).set({ startsAt, endsAt }).where(and(eq(bookingAssignments.bookingId, bookingId), eq(bookingAssignments.status, "active")));
@@ -191,6 +204,7 @@ export async function rescheduleInTx(tx: Tx, actor: Actor | null, bookingId: str
   } catch (e) {
     await tx.execute(sql`rollback to savepoint resched_try`);
     if (sqlState(e) === "23P01") throw new AppError("conflict", "An assigned cleaner is already booked at the new time");
+    if (sqlState(e) === "40P01" || sqlState(e) === "40001") throw new AppError("conflict", "The schedule was changing at the same moment. Please try again.");
     throw e;
   }
   await tx.update(bookings).set({ scheduledDate: date, timeSlotId: slot.id, startsAt, endsAt, updatedAt: now }).where(eq(bookings.id, bookingId));
