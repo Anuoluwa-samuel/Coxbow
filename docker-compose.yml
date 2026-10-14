@@ -1,0 +1,20 @@
+# Local development database. Production uses managed Postgres (e.g. Supabase).
+services:
+  db:
+    image: postgres:16
+    container_name: coxbow-postgres
+    environment:
+      POSTGRES_USER: coxbow
+      POSTGRES_PASSWORD: coxbow_local_dev
+      POSTGRES_DB: coxbow
+    ports:
+      - "54329:5432"
+    volumes:
+      - coxbow-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coxbow"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  coxbow-pgdata:

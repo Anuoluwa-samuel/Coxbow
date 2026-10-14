@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Figtree } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
+import { Logo } from "@/components/site/logo";
 import { DemoBanner } from "@/components/site/demo-banner";
 import { listServices } from "@/server/catalog";
 import { siteConfig, telLink } from "@/lib/site-config";
@@ -29,7 +31,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           Skip to content
         </a>
         <DemoBanner />
-        <Header phone={siteConfig.phone} telHref={telLink()} />
+        <Suspense
+          fallback={
+            <header className="sticky top-0 z-40 h-16 border-b border-line/80 bg-ivory">
+              <div className="mx-auto flex h-full max-w-6xl items-center px-4 sm:px-6 lg:px-8"><Logo /></div>
+            </header>
+          }
+        >
+          <Header phone={siteConfig.phone} telHref={telLink()} />
+        </Suspense>
         <main id="main">{children}</main>
         <Footer services={services} />
       </body>

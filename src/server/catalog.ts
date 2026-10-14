@@ -1,46 +1,47 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { demoCategories, demoServiceAreas, demoServices, demoTimeSlots } from "@/data/demo-catalog";
+import { db } from "./db/client";
+import { fetchCategories, fetchService, fetchServiceAreas, fetchServices, fetchTimeSlots } from "./catalog-db";
 import type { Service, ServiceArea, ServiceCategory, TimeSlot } from "@/lib/catalog-types";
 
 /**
- * Catalogue access layer. Pages and route handlers call these functions only.
- * Results are cached and tagged "catalog"; admin edits call revalidateTag("catalog").
- * Phase 3 swaps the implementation for database queries without touching callers.
+ * Cached catalogue reads for public pages. Entries are tagged "catalog"; any admin edit to
+ * services, add-ons, areas or time slots must call revalidateTag("catalog", "max").
+ * Uncached queries (used by booking logic, which must see live data) live in catalog-db.ts.
  */
 export async function listCategories(): Promise<ServiceCategory[]> {
   "use cache";
   cacheLife("minutes");
   cacheTag("catalog");
-  return demoCategories;
+  return fetchCategories(db);
 }
 
 export async function listServices(opts: { popularOnly?: boolean } = {}): Promise<Service[]> {
   "use cache";
   cacheLife("minutes");
   cacheTag("catalog");
-  return demoServices
-    .filter((s) => s.enabled && (!opts.popularOnly || s.popular))
-    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const all = await fetchServices(db);
+  return opts.popularOnly ? all.filter((s) => s.popular) : all;
 }
 
 export async function getService(slug: string): Promise<Service | null> {
   "use cache";
   cacheLife("minutes");
   cacheTag("catalog");
-  return demoServices.find((s) => s.slug === slug && s.enabled) ?? null;
+  return fetchService(db, slug);
 }
 
 export async function listServiceAreas(): Promise<ServiceArea[]> {
   "use cache";
   cacheLife("minutes");
   cacheTag("catalog");
-  return demoServiceAreas.filter((a) => a.enabled);
+  return fetchServiceAreas(db);
 }
 
 export async function listTimeSlots(): Promise<TimeSlot[]> {
   "use cache";
   cacheLife("minutes");
   cacheTag("catalog");
-  return demoTimeSlots;
+  const slots = await fetchTimeSlots(db);
+  return slots.map(({ id, label, startHour, endHour }) => ({ id, label, startHour, endHour }));
 }

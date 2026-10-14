@@ -1,0 +1,17 @@
+import "dotenv/config";
+import { config } from "dotenv";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import postgres from "postgres";
+
+config({ path: ".env.local" });
+
+async function main() {
+  const url = process.argv[2] === "--test" ? process.env.DATABASE_URL_TEST : process.env.DATABASE_URL;
+  if (!url) throw new Error("Database URL is not set");
+  const sql = postgres(url, { max: 1 });
+  await migrate(drizzle(sql), { migrationsFolder: "./drizzle" });
+  await sql.end();
+  console.log("Migrations applied.");
+}
+main().catch((e) => { console.error(e.message); process.exit(1); });
