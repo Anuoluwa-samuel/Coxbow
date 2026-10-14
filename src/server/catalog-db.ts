@@ -56,9 +56,9 @@ export async function fetchServiceAreas(db: Db, opts: { includeDisabled?: boolea
   return rows.filter((a) => opts.includeDisabled || a.enabled).map((a) => ({ state: a.state, city: a.city, neighbourhoods: a.neighbourhoods, enabled: a.enabled }));
 }
 
-export async function fetchTimeSlots(db: Db): Promise<TimeSlotWithCapacity[]> {
+export async function fetchTimeSlots(db: Db, opts: { includeDisabled?: boolean } = {}): Promise<(TimeSlotWithCapacity & { enabled: boolean })[]> {
   const rows = await db.select().from(timeSlots).orderBy(asc(timeSlots.sortOrder));
-  return rows.filter((s) => s.enabled).map((s) => ({ id: s.id, label: s.label, startHour: s.startHour, endHour: s.endHour, capacity: s.capacity }));
+  return rows.filter((s) => opts.includeDisabled || s.enabled).map((s) => ({ id: s.id, label: s.label, startHour: s.startHour, endHour: s.endHour, capacity: s.capacity, enabled: s.enabled }));
 }
 
 export async function fetchBookingSettings(db: Db): Promise<BookingSettings> {

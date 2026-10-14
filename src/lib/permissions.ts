@@ -18,6 +18,7 @@ export type Permission =
   | "settings.write"
   | "staff.manage"
   | "payments.read"
+  | "payments.record"
   | "payments.refund"
   | "users.manage"
   | "audit.read"
@@ -27,11 +28,11 @@ const matrix: Record<Role, readonly Permission[]> = {
   admin: [
     "dashboard.view", "bookings.read", "bookings.manage", "bookings.update_progress", "quotations.manage",
     "customers.read", "services.read", "services.write", "areas.write", "settings.write", "staff.manage",
-    "payments.read", "payments.refund", "users.manage", "audit.read", "notes.write",
+    "payments.read", "payments.record", "payments.refund", "users.manage", "audit.read", "notes.write",
   ],
   manager: [
     "dashboard.view", "bookings.read", "bookings.manage", "bookings.update_progress", "quotations.manage",
-    "customers.read", "services.read", "staff.manage", "payments.read", "notes.write",
+    "customers.read", "services.read", "staff.manage", "payments.read", "payments.record", "notes.write",
   ],
   cleaner: ["bookings.read_assigned", "bookings.update_progress"],
 };

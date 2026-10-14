@@ -38,6 +38,13 @@ export async function requirePagePermission(permission: Permission): Promise<Ses
   return user;
 }
 
+/** Any signed-in staff member. Fine-grained checks happen in the domain function being called. */
+export async function requireUser(): Promise<SessionUser> {
+  const user = await getCurrentUser();
+  if (!user) throw new AppError("unauthorized", "Sign in required");
+  return user;
+}
+
 /** For server actions and route handlers: throw typed errors instead of redirecting. */
 export async function requirePermission(permission: Permission): Promise<SessionUser> {
   const user = await getCurrentUser();
